@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ijwi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: a single kiosk screen. The avatar owns the middle; captions sit under it like subtitles; one big round talk button anchors the bottom. Rwanda's flag colours are the only accents. */
+:root{
+  --paper:#eef3f0; --panel:#ffffff; --ink:#14201b; --muted:#5b6b64; --line:#d6e0db;
+  --sky:#00a1de; --sun:#fad201; --hill:#20603d; --hill-2:#2f7a4f; --danger:#b3361f; --shadow:0 10px 30px rgba(20,32,27,.12);
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif; --f-body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0f1613;--panel:#18221e;--ink:#eef3f0;--muted:#a3b2ab;--line:#2a3832}}
+:root[data-theme="dark"]{--paper:#0f1613;--panel:#18221e;--ink:#eef3f0;--muted:#a3b2ab;--line:#2a3832}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto auto;max-width:900px;margin:0 auto;
+  padding:max(10px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;gap:12px;padding:6px 0}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand b{font:800 30px/1 var(--f-display);letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--hill-2);display:inline-block}
+.pill.warn i{background:var(--sun)} .pill.bad i{background:var(--danger)}
+.iconbtn{all:unset;cursor:pointer;font-size:13px;font-weight:700;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+.iconbtn:focus-visible,.talk:focus-visible,.chip:focus-visible,.link:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+
+.stage{position:relative;min-height:0;display:grid;place-items:center}
+.avatar-wrap{position:relative;height:100%;max-height:64vh;min-height:min(46vh,420px);aspect-ratio:600/720;max-width:100%;border-radius:28px;overflow:hidden;box-shadow:var(--shadow);background:#dfeff6}
+.avatar-wrap canvas{display:block}
+.bubble{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--panel);border-radius:16px;padding:8px 14px;font-weight:700;box-shadow:var(--shadow);font-size:15px;white-space:nowrap}
+.banner{position:absolute;left:12px;right:12px;bottom:12px;background:#fff7d6;border:1px solid #ecd36b;color:#5a4500;border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;text-align:center}
+
+.captions{min-height:104px;display:grid;align-content:end;gap:4px;padding:12px 4px 6px;text-align:center}
+.cap-you{color:var(--muted);font-size:15px}
+.cap-you b{color:var(--ink);font-weight:700}
+.cap-say{font:600 clamp(19px,3.2vw,26px)/1.3 var(--f-display);text-wrap:balance}
+.cap-tr{color:var(--hill);font-size:15px;font-style:italic}
+.cap-err{color:var(--danger);font-weight:700}
+
+.controls{display:grid;justify-items:center;gap:12px;padding-bottom:4px}
+.talk{all:unset;cursor:pointer;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;
+  background:var(--hill);color:#fff;box-shadow:0 8px 22px rgba(32,96,61,.35),inset 0 -6px 0 rgba(0,0,0,.18);position:relative;transition:transform .15s}
+.talk:active{transform:scale(.96)}
+.talk svg{width:40px;height:40px}
+.talk[data-mode="listening"]{background:var(--sky);box-shadow:0 0 0 calc(6px + var(--lvl,0)*26px) rgba(0,161,222,.25),0 8px 22px rgba(0,161,222,.35)}
+.talk[data-mode="busy"]{background:#7b8a84}
+.talk[data-mode="speaking"]{background:var(--danger)}
+.talk-label{font-weight:700;font-size:15px;color:var(--muted);min-height:22px;text-align:center}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{all:unset;cursor:pointer;font-size:14px;font-weight:700;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+select.chip{appearance:none;padding-right:13px}
+.typed{display:flex;gap:8px;width:min(520px,100%)}
+.typed input{flex:1;min-width:0;font:inherit;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+.link{all:unset;cursor:pointer;color:var(--muted);font-size:13px;text-decoration:underline}
+.fine{font-size:12px;color:var(--muted);text-align:center}
+
+.admin{position:fixed;inset:auto 12px 12px auto;width:min(420px,calc(100% - 24px));max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;box-shadow:var(--shadow);padding:16px;display:grid;gap:10px;font-size:14px;z-index:20}
+.admin h2{font:800 20px/1 var(--f-display);margin:0}
+.admin pre{background:#f3f6f4;border-radius:10px;padding:10px;font-size:12px;white-space:pre-wrap;margin:0}
+.admin .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.admin button{font:inherit;font-weight:700;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.admin small{color:var(--muted)}
+@media (max-width:560px){.brand span{display:none}.talk{width:84px;height:84px}html,body{height:auto}.app{height:auto;min-height:100vh;grid-template-rows:auto auto auto auto}.avatar-wrap{height:auto;width:min(82vw,52vh,380px);min-height:0;max-height:none}.captions{min-height:96px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><b>Ijwi</b><span>talk to me in any language · I love Kinyarwanda</span></div>
+    <div class="spacer"></div>
+    <span class="pill" id="statusPill" title="System status"><i></i><span id="statusText">Ready</span></span>
+  </header>
+
+  <main class="stage">
+    <div class="avatar-wrap" id="avatar"></div>
+    <div class="bubble" id="bubble">Muraho! Tap the button and talk to me</div>
+    <div class="banner" id="banner" hidden></div>
+  </main>
+
+  <section class="captions" aria-live="polite">
+    <div class="cap-you" id="capYou"></div>
+    <div class="cap-say" id="capSay"></div>
+    <div class="cap-tr" id="capTr"></div>
+  </section>
+
+  <section class="controls">
+    <button class="talk" id="talk" type="button" data-mode="idle" aria-label="Tap to talk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <div class="talk-label" id="talkLabel">Tap to talk</div>
+    <div class="chips" role="group" aria-label="Language you'll speak">
+      <button class="chip" type="button" data-lang="en" aria-pressed="true">English</button>
+      <button class="chip" type="button" data-lang="pl" aria-pressed="false">Polski</button>
+      <button class="chip" type="button" data-lang="rw" aria-pressed="false">Kinyarwanda</button>
+      <select class="chip" id="moreLang" aria-label="Other language">
+        <option value="">More…</option>
+        <option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option>
+        <option value="it">Italiano</option><option value="pt">Português</option><option value="uk">Українська</option>
+        <option value="sw">Kiswahili</option><option value="nl">Nederlands</option>
+      </select>
+    </div>
+    <form class="typed" id="typedForm" hidden>
+      <input id="typedInput" autocomplete="off" placeholder="Type a message…" aria-label="Type a message">
+      <button class="chip" type="submit">Send</button>
+    </form>
+    <button class="link" type="button" id="typeToggle">Prefer typing?</button>
+    <div class="fine">Ijwi is an AI and can make mistakes. Test version. Replies come from Claude; nothing you say is stored.</div>
+  </section>
+</div>
+
+<aside class="admin" id="admin" hidden aria-label="Admin panel">
+  <h2>Ijwi admin</h2>
+  <small>Shift+D toggles this panel.</small>
+  <label>Look <select id="lookSel"></select></label>
+  <label>Movement <select id="persSel"><option value="">The look's own</option></select></label>
+  <label>Kinyarwanda voice
+    <select id="voiceSel">
+      <option value="c4ir">C4IR male (fastest, ~1 s)</option>
+      <option value="pindo_deep">Pindo, deeper (best accent, ~4 s)</option>
+    </select>
+  </label>
+  <div class="row">
+    <button type="button" id="btnSummary">Email today's summary now</button>
+    <button type="button" id="btnTestEmail">Send test email</button>
+    
+  </div>
+  <div id="adminMsg"></div>
+  <b>Last answer timings</b><pre id="timings">–</pre>
+  <b>Health</b><pre id="health">–</pre>
+</aside>
+
+<script src="avatar.js"></script>
+<script src="photoAvatar.js"></script>
+<script src="shim.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
