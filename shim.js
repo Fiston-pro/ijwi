@@ -59,7 +59,7 @@
         try {
           const r = await realFetch("https://api.anthropic.com/v1/messages", { method: "POST",
             headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-            body: JSON.stringify({ model: MODEL, max_tokens: 300, stream: true,
+            body: JSON.stringify({ model: MODEL, max_tokens: 300, stream: true, thinking: { type: "disabled" },
               system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }], messages: buildMessages(body) }) });
           if (!r.ok) {
             const t = await r.text(); save("problems", { what: "brain", status: r.status, message: t.slice(0, 300) });
